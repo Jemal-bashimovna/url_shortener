@@ -10,8 +10,8 @@ type URL struct {
 	ShortURL       string     `json:"short_url" bindind:"required" db:"short_url"`
 	OriginalURL    string     `json:"original_url" bindind:"required" db:"original_url"`
 	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
-	ExpirationDate *time.Time `json:"expiration_date,omitempty" db:"expiration_date"`
-	DeletedAt      *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
+	ExpirationDate *time.Time `json:"expiration_date" db:"expiration_date"`
+	DeletedAt      *time.Time `json:"deleted_at" db:"deleted_at"`
 }
 
 type InputURL struct {
@@ -28,4 +28,12 @@ func (u *InputURL) ValidateURL(inputURL string) error {
 		return errors.New("invalid protocol")
 	}
 	return nil
+}
+
+type URLStats struct {
+	ShortURL     string     `json:"short_url"`
+	OriginalURL  string     `json:"original_url"`
+	CreatedAt    time.Time  `json:"created_at"`
+	LastAccessed *time.Time `json:"last_accessed"`
+	ClickCount   int        `json:"click_count"`
 }

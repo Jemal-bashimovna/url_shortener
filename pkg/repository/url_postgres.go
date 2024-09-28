@@ -46,24 +46,34 @@ func (r *Repository) IsExistURL(originalURL string) (urlshortener.URL, error) {
 	query := fmt.Sprintf("SELECT * FROM %s WHERE original_url = $1", urlsTable)
 	row := r.db.QueryRow(query, originalURL)
 	err := row.Scan(&url.Id, &url.ShortURL, &url.OriginalURL, &url.CreatedAt, &url.ExpirationDate, &url.DeletedAt)
-	if err == nil {
-		return url, nil
-	}
-
-	if err != sql.ErrNoRows {
+	if err != nil {
 		return url, err
 	}
 	return url, nil
+}
+
+func (r *Repository) IsExistShortURL(shortURL string) (urlshortener.URL, error) {
+	var url urlshortener.URL
+	query := fmt.Sprintf(`
+	SELECT ut.id, ut.short_url, ut.original_url, ut.created_at, ut.expiration_date, ut.deleted_at 
+	FROM %s ut WHERE ut.short_url = $1`, urlsTable)
+	err := r.db.Get(&url, query, shortURL)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return url, nil
+		}
+	}
+	return url, err
 }
 
 func (r *Repository) GetAll() ([]urlshortener.URL, error) {
 	var url []urlshortener.URL
 	query := fmt.Sprintf(`
 	SELECT ut.id, ut.short_url, ut.original_url, ut.created_at, ut.expiration_date, ut.deleted_at
-	FROM %s ut`, urlsTable)
+	FROM %s ut `, urlsTable)
 	err := r.db.Select(&url, query)
 	if err != nil {
-		return nil, fmt.Errorf("no jf %s", err)
+		return nil, err
 	}
 	return url, nil
 }

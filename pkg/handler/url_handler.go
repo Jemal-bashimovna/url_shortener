@@ -35,7 +35,7 @@ func (h *Handler) createUrl(ctx *gin.Context) {
 
 }
 
-func (h *Handler) redirectUrl(ctx *gin.Context) {
+func (h *Handler) GetAll(ctx *gin.Context) {
 	list, err := h.service.GetAll()
 	if err != nil {
 		NewErrorMessage(ctx, http.StatusInternalServerError, err.Error())
@@ -46,6 +46,22 @@ func (h *Handler) redirectUrl(ctx *gin.Context) {
 		"list": list,
 	})
 
+}
+func (h *Handler) redirectUrl(ctx *gin.Context) {
+	short_url := ctx.Param("short_url")
+	originalURL, err := h.service.RedirectURL(short_url)
+	if err != nil {
+		NewErrorMessage(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+	if len(originalURL) == 0 {
+		NewErrorMessage(ctx, http.StatusBadRequest, "short URL not found")
+		return
+	}
+
+	ctx.JSON(http.StatusMovedPermanently, map[string]interface{}{
+		"otiginal_URL": originalURL,
+	})
 }
 
 func (h *Handler) statsUrl(ctx *gin.Context) {}

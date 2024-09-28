@@ -2,6 +2,7 @@ package services
 
 import (
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	urlshortener "shotenedurl"
 	"shotenedurl/pkg/repository"
@@ -28,6 +29,9 @@ func (s *Service) CreateURL(originalURL string) (string, error) {
 	existURL, err := s.repo.IsExistURL(originalURL)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
 		return "", err
 	}
 
@@ -36,7 +40,9 @@ func (s *Service) CreateURL(originalURL string) (string, error) {
 	}
 
 	shortURL, err := s.GenerateShortURL()
+
 	if err != nil {
+
 		return "", err
 	}
 
@@ -55,4 +61,13 @@ func (s *Service) CreateURL(originalURL string) (string, error) {
 
 func (s *Service) GetAll() ([]urlshortener.URL, error) {
 	return s.repo.GetAll()
+}
+
+func (s *Service) RedirectURL(shortURL string) (string, error) {
+	url, err := s.repo.IsExistShortURL(shortURL)
+	if err != nil {
+		return "", err
+	}
+
+	return url.OriginalURL, nil
 }

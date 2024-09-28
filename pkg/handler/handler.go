@@ -18,7 +18,8 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.New()
 
 	router.POST("/shorten", h.createUrl)
-	router.GET("/short_url", h.redirectUrl)
+	router.GET("", h.GetAll)
+	router.GET("/:short_url", h.redirectUrl)
 	router.GET("/stats/:short_url", h.statsUrl)
 	router.DELETE("/:id", h.deleteUrl)
 
