@@ -1,0 +1,10 @@
+port : "8060"
+
+db: 
+   host: "localhost"
+   port: "5050"
+   user: "jemal"
+   dbname: "short_url"
+   sslmode: "disable"
+
+domain: "http://localhost/"
