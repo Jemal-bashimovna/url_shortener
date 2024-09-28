@@ -1,37 +1,31 @@
 package repository
 
 import (
-	"crypto/rand"
-	"encoding/hex"
+	"database/sql"
 	"fmt"
 	urlshortener "shotenedurl"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/spf13/viper"
 )
 
-type UrlPostgres struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewUrlPostgres(db *sqlx.DB) *UrlPostgres {
-	return &UrlPostgres{db: db}
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{db: db}
 }
 
-func (r *UrlPostgres) CreateURL(url urlshortener.URL) (string, error) {
-	str, err := GenerateShortURL()
-	if err != nil {
-		return "", err
-	}
-	shortURL := viper.GetString("domain") + str
+func (r *Repository) CreateURL(url urlshortener.URL) (string, error) {
+
 	var id int
 	tx, err := r.db.Begin()
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(shortURL)
+
 	queryURL := fmt.Sprintf("INSERT INTO %s (short_url, original_url) VALUES ($1, $2) RETURNING id", urlsTable)
-	row := tx.QueryRow(queryURL, shortURL, url.OriginalURL)
+	row := tx.QueryRow(queryURL, url.ShortURL, url.OriginalURL)
 	if err := row.Scan(&id); err != nil {
 		tx.Rollback()
 		return "", err
@@ -44,13 +38,32 @@ func (r *UrlPostgres) CreateURL(url urlshortener.URL) (string, error) {
 		return "", err
 	}
 
-	return shortURL, tx.Commit()
+	return url.ShortURL, tx.Commit()
 }
 
-func GenerateShortURL() (string, error) {
-	bytes := make([]byte, 8)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
+func (r *Repository) IsExistURL(originalURL string) (urlshortener.URL, error) {
+	var url urlshortener.URL
+	query := fmt.Sprintf("SELECT * FROM %s WHERE original_url = $1", urlsTable)
+	row := r.db.QueryRow(query, originalURL)
+	err := row.Scan(&url.Id, &url.ShortURL, &url.OriginalURL, &url.CreatedAt, &url.ExpirationDate, &url.DeletedAt)
+	if err == nil {
+		return url, nil
 	}
-	return hex.EncodeToString(bytes), nil
+
+	if err != sql.ErrNoRows {
+		return url, err
+	}
+	return url, nil
+}
+
+func (r *Repository) GetAll() ([]urlshortener.URL, error) {
+	var url []urlshortener.URL
+	query := fmt.Sprintf(`
+	SELECT ut.id, ut.short_url, ut.original_url, ut.created_at, ut.expiration_date, ut.deleted_at
+	FROM %s ut`, urlsTable)
+	err := r.db.Select(&url, query)
+	if err != nil {
+		return nil, fmt.Errorf("no jf %s", err)
+	}
+	return url, nil
 }

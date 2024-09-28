@@ -1,24 +1,24 @@
 package handler
 
 import (
-	"shotenedurl/pkg/service"
+	services "shotenedurl/pkg/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	services *service.Service
+	service *services.Service
 }
 
-func NewHandler(services *service.Service) *Handler {
-	return &Handler{services: services}
+func NewHandler(service *services.Service) *Handler {
+	return &Handler{service: service}
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.New()
 
 	router.POST("/shorten", h.createUrl)
-	router.GET("/:short_url", h.redirectUrl)
+	router.GET("/short_url", h.redirectUrl)
 	router.GET("/stats/:short_url", h.statsUrl)
 	router.DELETE("/:id", h.deleteUrl)
 

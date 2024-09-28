@@ -6,7 +6,7 @@ import (
 	urlshortener "shotenedurl"
 	"shotenedurl/pkg/handler"
 	"shotenedurl/pkg/repository"
-	"shotenedurl/pkg/service"
+	services "shotenedurl/pkg/service"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -38,7 +38,7 @@ func main() {
 	}
 
 	repo := repository.NewRepository(db)
-	services := service.NewService(repo)
+	services := services.NewService(repo)
 	handlers := handler.NewHandler(services)
 
 	srv := new(urlshortener.Server)

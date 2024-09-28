@@ -1,17 +1,25 @@
 package urlshortener
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 type URL struct {
-	Id             int    `json:"id"`
-	ShortURL       string `json:"short_url" bindind:"required"`
-	OriginalURL    string `json:"original_url" bindind:"required"`
-	CreatedAt      string `json:"created_at"`
-	ExpirationDate string `json:"exp_date"`
-	DeletedAt      string `json:"deleted_at"`
+	Id             int        `json:"id" db:"id"`
+	ShortURL       string     `json:"short_url" bindind:"required" db:"short_url"`
+	OriginalURL    string     `json:"original_url" bindind:"required" db:"original_url"`
+	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
+	ExpirationDate *time.Time `json:"expiration_date,omitempty" db:"expiration_date"`
+	DeletedAt      *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 
-func (u *URL) ValidateURL(inputURL string) error {
+type InputURL struct {
+	OriginalURL string `json:"original_url" bindind:"required"`
+	ShortURL    string `json:"short_url" bindind:"required"`
+}
+
+func (u *InputURL) ValidateURL(inputURL string) error {
 	if len(inputURL) > 250 {
 		return errors.New("URL is too long, maximum 250 characters")
 	}
