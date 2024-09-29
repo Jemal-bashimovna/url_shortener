@@ -74,3 +74,7 @@ func (s *Service) GetStatsURL(shortURL string) (urlshortener.URLStats, error) {
 
 	return s.repo.GetStatsURL(shortURL)
 }
+
+func (s *Service) DeleteURL(id int) error {
+	return s.repo.DeleteURL(id)
+}

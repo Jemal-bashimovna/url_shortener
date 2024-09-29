@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	urlshortener "shotenedurl"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -80,4 +81,18 @@ func (h *Handler) statsUrl(ctx *gin.Context) {
 	})
 }
 
-func (h *Handler) deleteUrl(ctx *gin.Context) {}
+func (h *Handler) deleteUrl(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		NewErrorMessage(ctx, http.StatusBadRequest, err.Error())
+	}
+
+	if err := h.service.DeleteURL(id); err != nil {
+		NewErrorMessage(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, map[string]interface{}{
+		"status": "url is deleted",
+	})
+}

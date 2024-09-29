@@ -79,17 +79,17 @@ func (r *Repository) RedirectURL(shortURL string) (string, error) {
 	return originalURL, nil
 }
 
-func (r *Repository) IsExistShortURL(shortURL string) (urlshortener.URL, error) {
-	var url urlshortener.URL
-	query := fmt.Sprintf(`
-	SELECT ut.id, ut.short_url, ut.original_url, ut.created_at, ut.expiration_date, ut.deleted_at 
-	FROM %s ut WHERE ut.short_url = $1`, urlsTable)
-	err := r.db.Get(&url, query, shortURL)
-	if err != nil && err == sql.ErrNoRows {
-		return url, nil
-	}
-	return url, err
-}
+// func (r *Repository) IsExistShortURL(shortURL string) (urlshortener.URL, error) {
+// 	var url urlshortener.URL
+// 	query := fmt.Sprintf(`
+// 	SELECT ut.id, ut.short_url, ut.original_url, ut.created_at, ut.expiration_date, ut.deleted_at
+// 	FROM %s ut WHERE ut.short_url = $1`, urlsTable)
+// 	err := r.db.Get(&url, query, shortURL)
+// 	if err != nil && err == sql.ErrNoRows {
+// 		return url, nil
+// 	}
+// 	return url, err
+// }
 
 func (r *Repository) GetAll() ([]urlshortener.URL, error) {
 	var url []urlshortener.URL
@@ -111,7 +111,7 @@ func (r *Repository) GetStatsURL(shortURL string) (urlshortener.URLStats, error)
 	SELECT u.short_url, u.original_url, u.created_at, MAX(c.created_at) as last_accessed, COUNT(c.id) as click_count
 	FROM %s u 
 	LEFT JOIN %s c ON u.id = c.url_id
-	WHERE u.short_url = $1
+	WHERE u.short_url = $1 AND u.deleted_at=null	
 	GROUP BY u.id`, urlsTable, clicksTable)
 
 	if err := r.db.Get(&stats, query, shortURL); err != nil {
@@ -122,4 +122,12 @@ func (r *Repository) GetStatsURL(shortURL string) (urlshortener.URLStats, error)
 	}
 
 	return stats, nil
+}
+
+func (r *Repository) DeleteURL(id int) error {
+
+	query := fmt.Sprintf(`
+    UPDATE %s SET deleted_at=NOW() WHERE id=$1`, urlsTable)
+	_, err := r.db.Exec(query, id)
+	return err
 }
