@@ -26,9 +26,7 @@ func (h *Handler) createUrl(ctx *gin.Context) {
 		NewErrorMessage(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	shortenURL := viper.GetString("domain") + str
-
 	ctx.JSON(http.StatusOK, map[string]interface{}{
 		"shortened_url": shortenURL,
 	})
@@ -49,9 +47,11 @@ func (h *Handler) GetAll(ctx *gin.Context) {
 }
 func (h *Handler) redirectUrl(ctx *gin.Context) {
 	short_url := ctx.Param("short_url")
+
 	originalURL, err := h.service.RedirectURL(short_url)
+
 	if err != nil {
-		NewErrorMessage(ctx, http.StatusBadRequest, err.Error())
+		NewErrorMessage(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if len(originalURL) == 0 {
@@ -60,10 +60,24 @@ func (h *Handler) redirectUrl(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusMovedPermanently, map[string]interface{}{
-		"otiginal_URL": originalURL,
+		"original_URL": originalURL,
 	})
 }
 
-func (h *Handler) statsUrl(ctx *gin.Context) {}
+func (h *Handler) statsUrl(ctx *gin.Context) {
+
+	shortURL := ctx.Param("short_url")
+
+	stats, err := h.service.GetStatsURL(shortURL)
+
+	if err != nil {
+		NewErrorMessage(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, map[string]interface{}{
+		"stats": stats,
+	})
+}
 
 func (h *Handler) deleteUrl(ctx *gin.Context) {}

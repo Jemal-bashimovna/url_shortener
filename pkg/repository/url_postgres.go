@@ -41,15 +41,42 @@ func (r *Repository) CreateURL(url urlshortener.URL) (string, error) {
 	return url.ShortURL, tx.Commit()
 }
 
-func (r *Repository) IsExistURL(originalURL string) (urlshortener.URL, error) {
+func (r *Repository) IsExistOriginalURL(originalURL string) (urlshortener.URL, error) {
 	var url urlshortener.URL
 	query := fmt.Sprintf("SELECT * FROM %s WHERE original_url = $1", urlsTable)
-	row := r.db.QueryRow(query, originalURL)
-	err := row.Scan(&url.Id, &url.ShortURL, &url.OriginalURL, &url.CreatedAt, &url.ExpirationDate, &url.DeletedAt)
-	if err != nil {
+	if err := r.db.Get(&url, query, originalURL); err != nil {
+		if err == sql.ErrNoRows {
+			return url, nil
+		}
 		return url, err
 	}
+
 	return url, nil
+}
+
+func (r *Repository) RedirectURL(shortURL string) (string, error) {
+	var originalURL string
+	var id int
+
+	query := fmt.Sprintf(`
+	SELECT id, original_url
+	FROM %s WHERE short_url = $1`, urlsTable)
+	row := r.db.QueryRow(query, shortURL)
+	if err := row.Scan(&id, &originalURL); err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", err
+	}
+
+	insertClickQuery := fmt.Sprintf("INSERT INTO %s (url_id) VALUES ($1)", clicksTable)
+	_, err := r.db.Exec(insertClickQuery, id)
+
+	if err != nil {
+		return "", err
+	}
+
+	return originalURL, nil
 }
 
 func (r *Repository) IsExistShortURL(shortURL string) (urlshortener.URL, error) {
@@ -58,10 +85,8 @@ func (r *Repository) IsExistShortURL(shortURL string) (urlshortener.URL, error) 
 	SELECT ut.id, ut.short_url, ut.original_url, ut.created_at, ut.expiration_date, ut.deleted_at 
 	FROM %s ut WHERE ut.short_url = $1`, urlsTable)
 	err := r.db.Get(&url, query, shortURL)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return url, nil
-		}
+	if err != nil && err == sql.ErrNoRows {
+		return url, nil
 	}
 	return url, err
 }
@@ -76,4 +101,25 @@ func (r *Repository) GetAll() ([]urlshortener.URL, error) {
 		return nil, err
 	}
 	return url, nil
+}
+
+func (r *Repository) GetStatsURL(shortURL string) (urlshortener.URLStats, error) {
+
+	var stats urlshortener.URLStats
+
+	query := fmt.Sprintf(`
+	SELECT u.short_url, u.original_url, u.created_at, MAX(c.created_at) as last_accessed, COUNT(c.id) as click_count
+	FROM %s u 
+	LEFT JOIN %s c ON u.id = c.url_id
+	WHERE u.short_url = $1
+	GROUP BY u.id`, urlsTable, clicksTable)
+
+	if err := r.db.Get(&stats, query, shortURL); err != nil {
+		if err == sql.ErrNoRows {
+			return stats, fmt.Errorf("short URL not found")
+		}
+		return stats, err
+	}
+
+	return stats, nil
 }
