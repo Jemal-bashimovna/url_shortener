@@ -79,23 +79,11 @@ func (r *Repository) RedirectURL(shortURL string) (string, error) {
 	return originalURL, nil
 }
 
-// func (r *Repository) IsExistShortURL(shortURL string) (urlshortener.URL, error) {
-// 	var url urlshortener.URL
-// 	query := fmt.Sprintf(`
-// 	SELECT ut.id, ut.short_url, ut.original_url, ut.created_at, ut.expiration_date, ut.deleted_at
-// 	FROM %s ut WHERE ut.short_url = $1`, urlsTable)
-// 	err := r.db.Get(&url, query, shortURL)
-// 	if err != nil && err == sql.ErrNoRows {
-// 		return url, nil
-// 	}
-// 	return url, err
-// }
-
 func (r *Repository) GetAll() ([]urlshortener.URL, error) {
 	var url []urlshortener.URL
 	query := fmt.Sprintf(`
-	SELECT ut.id, ut.short_url, ut.original_url, ut.created_at, ut.expiration_date, ut.deleted_at
-	FROM %s ut `, urlsTable)
+	SELECT id, short_url, original_url, created_at, expiration_date, deleted_at
+	FROM %s `, urlsTable)
 	err := r.db.Select(&url, query)
 	if err != nil {
 		return nil, err
@@ -128,6 +116,19 @@ func (r *Repository) DeleteURL(id int) error {
 
 	query := fmt.Sprintf(`
     UPDATE %s SET deleted_at=NOW() WHERE id=$1`, urlsTable)
-	_, err := r.db.Exec(query, id)
-	return err
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if updated == 0 {
+		return fmt.Errorf("url not found with this id")
+	}
+
+	return nil
 }

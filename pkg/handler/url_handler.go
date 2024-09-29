@@ -84,7 +84,8 @@ func (h *Handler) statsUrl(ctx *gin.Context) {
 func (h *Handler) deleteUrl(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		NewErrorMessage(ctx, http.StatusBadRequest, err.Error())
+		NewErrorMessage(ctx, http.StatusBadRequest, "invalid id param")
+		return
 	}
 
 	if err := h.service.DeleteURL(id); err != nil {
