@@ -3,9 +3,8 @@ CREATE TABLE urls (
     short_url VARCHAR(255) UNIQUE,
     original_url TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expiration_date TIMESTAMP,
-    deleted_at TIMESTAMP
-
+    expiration_date TIMESTAMP DEFAULT NULL,
+    deleted_at TIMESTAMP DEFAULT NULL
 );
 
 CREATE TABLE clicks(

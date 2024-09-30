@@ -2,7 +2,7 @@ package handler
 
 import (
 	"net/http"
-	urlshortener "shotenedurl"
+	"shotenedurl/models"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +11,8 @@ import (
 
 func (h *Handler) createUrl(ctx *gin.Context) {
 
-	var input urlshortener.InputURL
+	var input models.InputURL
+
 	if err := ctx.BindJSON(&input); err != nil {
 		NewErrorMessage(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -22,14 +23,16 @@ func (h *Handler) createUrl(ctx *gin.Context) {
 		return
 	}
 
-	str, err := h.service.CreateURL(input.OriginalURL)
+	str, err := h.service.CreateURL(input)
 	if err != nil {
 		NewErrorMessage(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
+
 	shortenURL := viper.GetString("domain") + str
-	ctx.JSON(http.StatusOK, map[string]interface{}{
-		"shortened_url": shortenURL,
+
+	ctx.JSON(http.StatusOK, models.CreateResponse{
+		ShortURL: shortenURL,
 	})
 
 }
@@ -46,7 +49,9 @@ func (h *Handler) GetAll(ctx *gin.Context) {
 	})
 
 }
+
 func (h *Handler) redirectUrl(ctx *gin.Context) {
+
 	short_url := ctx.Param("short_url")
 
 	originalURL, err := h.service.RedirectURL(short_url)

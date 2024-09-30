@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	urlshortener "shotenedurl"
+	"shotenedurl/models"
 	"shotenedurl/pkg/repository"
 )
 
@@ -24,9 +24,9 @@ func (s *Service) GenerateShortURL() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-func (s *Service) CreateURL(originalURL string) (string, error) {
+func (s *Service) CreateURL(inputURL models.InputURL) (string, error) {
 
-	existURL, err := s.repo.IsExistOriginalURL(originalURL)
+	existURL, err := s.repo.IsExistOriginalURL(inputURL)
 	if err != nil {
 		return "", err
 	}
@@ -41,12 +41,7 @@ func (s *Service) CreateURL(originalURL string) (string, error) {
 		return "", err
 	}
 
-	url := urlshortener.URL{
-		OriginalURL: originalURL,
-		ShortURL:    shortURL,
-	}
-
-	str, err := s.repo.CreateURL(url)
+	str, err := s.repo.CreateURL(inputURL, shortURL)
 	if err != nil {
 		return "", err
 	}
@@ -56,13 +51,13 @@ func (s *Service) CreateURL(originalURL string) (string, error) {
 	return str, nil
 }
 
-func (s *Service) GetAll() ([]urlshortener.URL, error) {
+func (s *Service) GetAll() ([]models.URL, error) {
 	return s.repo.GetAll()
 }
 
 func (s *Service) RedirectURL(shortURL string) (string, error) {
 
-	originalURL, err := s.repo.RedirectURL(shortURL)
+	originalURL, err := s.repo.GetRedirectURL(shortURL)
 
 	if err != nil {
 		return "", err
@@ -70,7 +65,7 @@ func (s *Service) RedirectURL(shortURL string) (string, error) {
 	return originalURL, nil
 }
 
-func (s *Service) GetStatsURL(shortURL string) (urlshortener.URLStats, error) {
+func (s *Service) GetStatsURL(shortURL string) (models.URLStats, error) {
 
 	return s.repo.GetStatsURL(shortURL)
 }
