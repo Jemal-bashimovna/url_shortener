@@ -18,34 +18,21 @@ func (h *Handler) createUrl(ctx *gin.Context) {
 		return
 	}
 
-	if err := input.ValidateURL(input.OriginalURL); err != nil {
+	if err := validateURL(input.OriginalURL); err != nil {
 		NewErrorMessage(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	str, err := h.service.CreateURL(input)
+	generatedShortURL, err := h.service.CreateURL(input.OriginalURL)
 	if err != nil {
 		NewErrorMessage(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	shortenURL := viper.GetString("domain") + str
+	shortenURL := viper.GetString("domain") + generatedShortURL
 
 	ctx.JSON(http.StatusOK, models.CreateResponse{
 		ShortURL: shortenURL,
-	})
-
-}
-
-func (h *Handler) GetAll(ctx *gin.Context) {
-	list, err := h.service.GetAll()
-	if err != nil {
-		NewErrorMessage(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	ctx.JSON(http.StatusOK, map[string]interface{}{
-		"list": list,
 	})
 
 }
@@ -55,7 +42,6 @@ func (h *Handler) redirectUrl(ctx *gin.Context) {
 	short_url := ctx.Param("short_url")
 
 	originalURL, err := h.service.RedirectURL(short_url)
-
 	if err != nil {
 		NewErrorMessage(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -65,9 +51,7 @@ func (h *Handler) redirectUrl(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusMovedPermanently, map[string]interface{}{
-		"original_URL": originalURL,
-	})
+	http.Redirect(ctx.Writer, ctx.Request, originalURL, http.StatusMovedPermanently)
 }
 
 func (h *Handler) statsUrl(ctx *gin.Context) {
@@ -98,7 +82,7 @@ func (h *Handler) deleteUrl(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, map[string]interface{}{
-		"status": "url is deleted",
+	ctx.JSON(http.StatusOK, models.DeleteStatus{
+		Status: "Success",
 	})
 }

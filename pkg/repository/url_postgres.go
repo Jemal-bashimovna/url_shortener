@@ -8,18 +8,18 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type Repository struct {
+type URLRepository struct {
 	db *sqlx.DB
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
-	return &Repository{db: db}
+func NewURLRepository(db *sqlx.DB) *URLRepository {
+	return &URLRepository{db: db}
 }
 
-func (r *Repository) CreateURL(inputURL models.InputURL, shortURL string) (string, error) {
+func (r *URLRepository) CreateURL(inputURL, shortURL string) (string, error) {
 
 	queryURL := fmt.Sprintf("INSERT INTO %s (short_url, original_url) VALUES ($1, $2)", urlsTable)
-	_, err := r.db.Exec(queryURL, shortURL, inputURL.OriginalURL)
+	_, err := r.db.Exec(queryURL, shortURL, inputURL)
 	if err != nil {
 		return "", err
 	}
@@ -27,20 +27,22 @@ func (r *Repository) CreateURL(inputURL models.InputURL, shortURL string) (strin
 	return shortURL, nil
 }
 
-func (r *Repository) IsExistOriginalURL(originalURL models.InputURL) (models.URL, error) {
-	var url models.URL
-	query := fmt.Sprintf("SELECT * FROM %s WHERE original_url = $1", urlsTable)
-	if err := r.db.Get(&url, query, originalURL.OriginalURL); err != nil {
+func (r *URLRepository) IsExistOriginalURL(inputURL string) (string, error) {
+	var shortURL string
+	query := fmt.Sprintf("SELECT short_url FROM %s WHERE original_url = $1", urlsTable)
+	row := r.db.QueryRow(query, inputURL)
+
+	if err := row.Scan(&shortURL); err != nil {
 		if err == sql.ErrNoRows {
-			return url, nil
+			return "", nil
 		}
-		return url, err
+		return "", err
 	}
 
-	return url, nil
+	return shortURL, nil
 }
 
-func (r *Repository) GetRedirectURL(shortURL string) (string, error) {
+func (r *URLRepository) GetRedirectURL(shortURL string) (string, error) {
 	var originalURL string
 	var id int
 
@@ -58,10 +60,12 @@ func (r *Repository) GetRedirectURL(shortURL string) (string, error) {
 			tx.Rollback()
 			return "", nil
 		}
+		tx.Rollback()
 		return "", err
 	}
 
 	insertClickQuery := fmt.Sprintf("INSERT INTO %s (url_id) VALUES ($1)", clicksTable)
+	fmt.Println(insertClickQuery)
 	_, err = tx.Exec(insertClickQuery, id)
 
 	if err != nil {
@@ -72,19 +76,7 @@ func (r *Repository) GetRedirectURL(shortURL string) (string, error) {
 	return originalURL, tx.Commit()
 }
 
-func (r *Repository) GetAll() ([]models.URL, error) {
-	var urls []models.URL
-	query := fmt.Sprintf(`
-	SELECT id, short_url, original_url, created_at, expiration_date, deleted_at
-	FROM %s `, urlsTable)
-	err := r.db.Select(&urls, query)
-	if err != nil {
-		return nil, err
-	}
-	return urls, nil
-}
-
-func (r *Repository) GetStatsURL(shortURL string) (models.URLStats, error) {
+func (r *URLRepository) GetStatsURL(shortURL string) (models.URLStats, error) {
 
 	var stats models.URLStats
 
@@ -105,7 +97,7 @@ func (r *Repository) GetStatsURL(shortURL string) (models.URLStats, error) {
 	return stats, nil
 }
 
-func (r *Repository) DeleteURL(id int) error {
+func (r *URLRepository) DeleteURL(id int) error {
 
 	query := fmt.Sprintf(`
     UPDATE %s SET deleted_at=NOW() WHERE id=$1`, urlsTable)

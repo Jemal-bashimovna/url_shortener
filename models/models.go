@@ -1,44 +1,23 @@
 package models
 
-import (
-	"errors"
-	"time"
-)
-
-type URL struct {
-	Id             int        `json:"id" db:"id"`
-	ShortURL       string     `json:"short_url" db:"short_url"`
-	OriginalURL    string     `json:"original_url" binding:"required" db:"original_url"`
-	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
-	ExpirationDate *time.Time `json:"expiration_date" db:"expiration_date"`
-	DeletedAt      *time.Time `json:"deleted_at" db:"deleted_at"`
-}
+import "time"
 
 type InputURL struct {
 	OriginalURL string `json:"original_url" binding:"required"`
 }
 
-func (u *InputURL) ValidateURL(inputURL string) error {
-	if len(inputURL) > 250 {
-		return errors.New("URL is too long, maximum 250 characters")
-	}
-	if len(inputURL) <= 7 {
-		return errors.New("URL is too short")
-	}
-	if inputURL[:7] != "http://" && inputURL[:8] != "https://" {
-		return errors.New("invalid protocol")
-	}
-	return nil
-}
-
 type URLStats struct {
-	ShortURL     string     `json:"short_url" db:"short_url"`
-	OriginalURL  string     `json:"original_url" db:"original_url"`
-	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
-	LastAccessed *time.Time `json:"last_accessed" db:"last_accessed"`
-	ClickCount   int        `json:"click_count" db:"click_count"`
+	ShortURL     string    `json:"short_url" db:"short_url"`
+	OriginalURL  string    `json:"original_url" db:"original_url"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	LastAccessed time.Time `json:"last_accessed" db:"last_accessed"`
+	ClickCount   int       `json:"click_count" db:"click_count"`
 }
 
 type CreateResponse struct {
 	ShortURL string
+}
+
+type DeleteStatus struct {
+	Status string
 }
