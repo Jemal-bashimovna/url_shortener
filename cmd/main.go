@@ -5,14 +5,14 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"syscall"
+
 	"shotenedurl/cmd/server"
 	"shotenedurl/pkg/handler"
 	"shotenedurl/pkg/repository"
 	services "shotenedurl/pkg/service"
-	"syscall"
 
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -65,9 +65,9 @@ func main() {
 		logrus.Errorf("error occured on server shutting down: %s", err.Error())
 	}
 
-	if err := db.Close(); err != nil {
-		logrus.Errorf("error occured on db connection close: %s", err.Error())
-	}
+	// if err := db.Close(); err != nil {
+	// 	logrus.Errorf("error occured on db connection close: %s", err.Error())
+	// }
 
 }
 

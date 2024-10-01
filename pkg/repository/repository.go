@@ -3,7 +3,7 @@ package repository
 import (
 	"shotenedurl/models"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type URL interface {
@@ -18,7 +18,7 @@ type Repository struct {
 	URL
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{
 		URL: NewURLRepository(db),
 	}
