@@ -21,6 +21,8 @@ const (
 	clicksTable = "clicks"
 )
 
+var ctx = context.Background()
+
 // func NewPostgres(cfg Config) (*sqlx.DB, error) {
 // 	db, err := sqlx.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
 // 		cfg.Host, cfg.Port, cfg.User, cfg.DBName, cfg.Password, cfg.SSLMode))
@@ -39,12 +41,12 @@ const (
 func NewPostgres(cfg Config) (*pgxpool.Pool, error) {
 	connString := fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
 		cfg.Host, cfg.Port, cfg.User, cfg.DBName, cfg.Password, cfg.SSLMode)
-	conn, err := pgxpool.New(context.Background(), connString)
+	conn, err := pgxpool.New(ctx, connString)
 	if err != nil {
 		return nil, err
 	}
 
-	err = conn.Ping(context.Background())
+	err = conn.Ping(ctx)
 	if err != nil {
 		return nil, err
 	}

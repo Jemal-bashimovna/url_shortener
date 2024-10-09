@@ -1,9 +1,10 @@
 package repository
 
 import (
-	"shotenedurl/models"
+	"urlshortener/models"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type URL interface {
@@ -18,8 +19,8 @@ type Repository struct {
 	URL
 }
 
-func NewRepository(db *pgxpool.Pool) *Repository {
+func NewRepository(db *pgxpool.Pool, redisDB *redis.Client) *Repository {
 	return &Repository{
-		URL: NewURLRepository(db),
+		URL: NewURLRepository(db, redisDB),
 	}
 }

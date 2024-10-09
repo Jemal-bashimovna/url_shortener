@@ -1,8 +1,8 @@
 package service
 
 import (
-	"shotenedurl/models"
-	"shotenedurl/pkg/repository"
+	"urlshortener/models"
+	"urlshortener/pkg/repository"
 )
 
 type URL interface {

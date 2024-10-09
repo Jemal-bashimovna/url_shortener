@@ -2,8 +2,8 @@ package service
 
 import (
 	"fmt"
-	"shotenedurl/models"
-	"shotenedurl/pkg/repository"
+	"urlshortener/models"
+	"urlshortener/pkg/repository"
 )
 
 type URLService struct {

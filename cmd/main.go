@@ -6,11 +6,10 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"shotenedurl/cmd/server"
-	"shotenedurl/pkg/handler"
-	"shotenedurl/pkg/repository"
-	services "shotenedurl/pkg/service"
+	"urlshortener/cmd/server"
+	"urlshortener/pkg/handler"
+	"urlshortener/pkg/repository"
+	"urlshortener/pkg/service"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -28,6 +27,12 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Error loading env variables: %s", err)
 	}
+	redisDB := repository.NewRedis(repository.RedisConfig{
+		Host:     viper.GetString("redis.host"),
+		Port:     viper.GetString("redis.port"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       viper.GetInt("redis.db"),
+	})
 
 	db, err := repository.NewPostgres(repository.Config{
 		Host:     viper.GetString("db.host"),
@@ -42,8 +47,8 @@ func main() {
 		logrus.Fatalf("Error connecting to database: %s", err)
 	}
 
-	repo := repository.NewRepository(db)
-	services := services.NewService(repo)
+	repo := repository.NewRepository(db, redisDB)
+	services := service.NewService(repo)
 	handlers := handler.NewHandler(services)
 
 	srv := new(server.Server)
@@ -65,7 +70,9 @@ func main() {
 		logrus.Errorf("error occured on server shutting down: %s", err.Error())
 	}
 
-	// if err := db.Close(); err != nil {
+	// defer
+	//  err := db.Close()
+	//  if  err != nil {
 	// 	logrus.Errorf("error occured on db connection close: %s", err.Error())
 	// }
 

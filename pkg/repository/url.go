@@ -3,18 +3,23 @@ package repository
 import (
 	"context"
 	"fmt"
-	"shotenedurl/models"
+	"urlshortener/models"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type URLRepository struct {
-	db *pgxpool.Pool
+	db      *pgxpool.Pool
+	redisDB *redis.Client
 }
 
-func NewURLRepository(db *pgxpool.Pool) *URLRepository {
-	return &URLRepository{db: db}
+func NewURLRepository(db *pgxpool.Pool, redisDB *redis.Client) *URLRepository {
+	return &URLRepository{
+		db:      db,
+		redisDB: redisDB,
+	}
 }
 
 func (r *URLRepository) CreateURL(inputURL, shortURL string) (string, error) {
@@ -30,6 +35,7 @@ func (r *URLRepository) CreateURL(inputURL, shortURL string) (string, error) {
 
 func (r *URLRepository) IsExistOriginalURL(inputURL string) (string, error) {
 	var shortURL string
+
 	query := fmt.Sprintf("SELECT short_url FROM %s WHERE original_url = $1", urlsTable)
 	row := r.db.QueryRow(context.Background(), query, inputURL)
 
@@ -44,6 +50,16 @@ func (r *URLRepository) IsExistOriginalURL(inputURL string) (string, error) {
 }
 
 func (r *URLRepository) GetRedirectURL(shortURL string) (string, error) {
+
+	// // get shortURL from redis cache
+	// cashedURL, err := r.redisDB.Get(ctx, shortURL).Result()
+	// if err == nil {
+	// 	return cashedURL, err
+	// }
+	// if err != redis.Nil {
+	// 	return "", err
+	// }
+
 	var originalURL string
 	var id int
 
@@ -73,12 +89,32 @@ func (r *URLRepository) GetRedirectURL(shortURL string) (string, error) {
 		return "", err
 	}
 
+	// err = r.redisDB.Set(ctx, shortURL, originalURL, 1*time.Hour).Err()
+	// if err != nil {
+	// 	fmt.Println("Error when saving to Redis cache: ", err)
+	// }
+
 	return originalURL, tx.Commit(context.Background())
 }
 
 func (r *URLRepository) GetStatsURL(shortURL string) (models.URLStats, error) {
 
 	var stats models.URLStats
+
+	// // Попробуем получить данные из Redis кэша
+	// ctx := context.Background()
+	// cachedStats, err := r.redisDB.Get(ctx, shortURL).Result()
+	// if err == nil {
+	// 	// Если данные найдены в кэше, десериализуем их
+	// 	if err := json.Unmarshal([]byte(cachedStats), &stats); err != nil {
+	// 		return stats, fmt.Errorf("error unmarshaling cached data: %w", err)
+	// 	}
+	// 	fmt.Println("Данные получены из кэша Redis")
+	// 	return stats, nil
+	// } else if err != redis.Nil {
+	// 	// Если произошла ошибка при обращении к Redis, возвращаем её
+	// 	return stats, err
+	// }
 
 	query := fmt.Sprintf(`
 	SELECT u.short_url, u.original_url, u.created_at, MAX(c.created_at) as last_accessed, COUNT(c.id) as click_count
@@ -94,6 +130,17 @@ func (r *URLRepository) GetStatsURL(shortURL string) (models.URLStats, error) {
 		}
 		return stats, err
 	}
+
+	// // Сохраняем данные в Redis кэш с истечением времени (например, на 10 минут)
+	// cachedData, err := json.Marshal(stats)
+	// if err != nil {
+	// 	return stats, fmt.Errorf("error marshaling data for Redis: %w", err)
+	// }
+
+	// err = r.redisDB.Set(ctx, shortURL, cachedData, 10*time.Minute).Err()
+	// if err != nil {
+	// 	fmt.Println("Ошибка при сохранении в кэше Redis: ", err)
+	// }
 
 	return stats, nil
 }

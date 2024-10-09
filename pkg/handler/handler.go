@@ -1,16 +1,16 @@
 package handler
 
 import (
-	services "shotenedurl/pkg/service"
+	"urlshortener/pkg/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	service *services.Service
+	service *service.Service
 }
 
-func NewHandler(service *services.Service) *Handler {
+func NewHandler(service *service.Service) *Handler {
 	return &Handler{service: service}
 }
 

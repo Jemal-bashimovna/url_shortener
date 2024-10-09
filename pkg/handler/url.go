@@ -2,7 +2,8 @@ package handler
 
 import (
 	"net/http"
-	"shotenedurl/models"
+	"urlshortener/models"
+
 	"strconv"
 
 	"github.com/gin-gonic/gin"
